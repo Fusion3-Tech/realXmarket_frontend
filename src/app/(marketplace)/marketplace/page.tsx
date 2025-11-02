@@ -1,132 +1,134 @@
 import MarketCard from '@/components/cards/market-card';
-import {
-  checkBlock,
-  getActiveProperties,
-  getAllAssets,
-  getAllOngoingListings,
-  getAllOngoingListingsWhereAddressIsDeveloper,
-  getAllTokenBuyerForListing,
-  getAllTokenBuyers,
-  getItemMetadata,
-  getPropertyById,
-  getTokenRemaining,
-  getTokensAndListingsOwnedByAccount
-} from '@/lib/queries';
-
-import { FetchedProperty, Listing, Property } from '@/types';
+import { getAllOngoingListings } from '@/lib/queries';
 import FilterTabs from './filter-tabs';
-import { hexToString } from '@/lib/utils';
-import { getCookieStorage } from '@/lib/cookie-storage';
 import { Shell } from '@/components/shell';
-import { generatePresignedUrl } from '@/lib/s3';
 import { Button } from '@/components/ui/button';
 import { Suspense } from 'react';
 import FavoritesToggle from './components/favorites-toggle';
+import {
+  extractPropertyPrice,
+  extractTokenPrice,
+  fetchListingMetadata,
+  norm,
+  parseRange
+} from './utils';
+import { AnyJson } from '@polkadot/types/types';
 
+// This doesn't seem to be used anywhere.
 export const maxDuration = 300;
-export default async function Marketplace() {
-  const data = await getAllOngoingListings();
-  const assets = await getAllAssets();
 
-  // console.log('assets', assets);
+type MarketplaceProps = {
+  searchParams?: Record<string, string>;
+};
 
-  // console.log('data', data);
-  // console.log('ALL ONGOING LISTINGS', data);
+export type RawListing = {
+  listingId: AnyJson;
+  listingDetails: AnyJson;
+};
 
-  // const activeListingsWhereAccountIsDeveloper =
-  //   await getAllOngoingListingsWhereAddressIsDeveloper(
-  //     '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
-  //   );
-  // console.log('activeListingsWhereAccountIsDeveloper', activeListingsWhereAccountIsDeveloper);
-  // console.log('activeListingsWhereAccountIsDeveloper', activeListingsWhereAccountIsDeveloper);
+export default async function Marketplace({ searchParams }: MarketplaceProps) {
+  const rawListings = (await getAllOngoingListings()).filter(Boolean) as RawListing[];
 
-  // const allTokenBuyers = await getAllTokenBuyers();
-  // console.log('ALL TOKEN BUYERS', allTokenBuyers);
+  const listingData = await fetchListingMetadata(rawListings);
 
-  // const listing9Buyers = await getAllTokenBuyerForListing(9);
-  // console.log('TOKEN BUYERS FOR LISTING 9', listing9Buyers);
-
-  // const tokensOwnedByBob = await getTokensAndListingsOwnedByAccount(
-  //   '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
-  // ); // Bob account
-
-  // console.log('TOKENS OWNED BY BOB ACCOUNT', tokensOwnedByBob);
-  // const properties = (await getActiveProperties()) as FetchedProperty[];
-
-  // console.log(properties);
-
-  // async function FetchMetaData() {
-  //   activeListingsWhereAccountIsDeveloper.map(async listing => {
-  //     // const details  = JSON.parse(listing.listingDetails);
-  //
-  //     if (listing.listingDetails && typeof listing.listingDetails === 'object') {
-  //       const metaData = await getItemMetadata(
-  //         listing.listingDetails.collectionId,
-  //         listing.listingDetails.itemId
-  //       );
-  //       console.log(hexToString(metaData.data));
-  //     }
-  //   });
-  // }
-
-  // console.log(await FetchMetaData());
-
-  async function FetchMetaData() {
-    const results = await Promise.all(
-      data.map(async (listing: any) => {
-        if (listing.listingDetails && typeof listing.listingDetails === 'object') {
-          const metaData = await getItemMetadata(
-            listing.listingDetails.collectionId,
-            listing.listingDetails.itemId
-          );
-          // const tokenRemaining = await getTokenRemaining(listing.listingId);
-          // const metadata = hexToString(metaData.data);
-          const metadata = metaData.data.startsWith('0x')
-            ? hexToString(metaData.data)
-            : metaData.data;
-          // console.log(listing?.listingDetails.listedTokenAmount);
-
-          // Parse metadata and generate file URLs
-          let fileUrls: string[] = [];
-          try {
-            if (metadata && typeof metadata === 'string') {
-              const data = JSON.parse(metadata);
-              if (data.files && Array.isArray(data.files)) {
-                fileUrls = await Promise.all(
-                  data.files
-                    .filter((fileKey: string) => fileKey.split('/')[2] === 'property_image')
-                    .map(async (fileKey: string) => await generatePresignedUrl(fileKey))
-                );
-              }
-            }
-          } catch (error) {
-            // Error generating file URLs, continue with empty array
-          }
-
-          return {
-            listing,
-            tokenRemaining: listing?.listingDetails.listedTokenAmount,
-            metadata,
-            fileUrls
-          };
-        }
-      })
-    );
-    return results;
+  const townCitySet = new Map<string, string>();
+  for (const l of listingData) {
+    try {
+      const meta = l.metadata ? JSON.parse(l.metadata) : {};
+      const city = (meta.address_town_city || '').toString().trim();
+      if (!city) continue;
+      const value = norm(city);
+      if (!townCitySet.has(value)) townCitySet.set(value, city);
+    } catch {}
   }
+  const townCityOptions = Array.from(townCitySet.entries()).map(([value, name]) => ({
+    name,
+    value
+  }));
 
-  // console.log(await FetchMetaData());
+  const search = norm(searchParams?.search ?? '');
+  const propertyTypeParam = norm(searchParams?.propertyType ?? '');
+  const countryParam = norm(searchParams?.country ?? '');
+  const cityParam = norm(searchParams?.city ?? '');
+  const [ppMin, ppMax] = parseRange(searchParams?.propertyPrice);
+  const [tpMin, tpMax] = parseRange(searchParams?.tokenPrice);
 
-  const listings: Listing[] = (await FetchMetaData()).filter(
-    (item): item is Listing => item !== undefined
-  );
+  const filteredListings = listingData.filter(l => {
+    try {
+      const meta = l.metadata ? JSON.parse(l.metadata) : {};
+
+      const propertyName = (meta.property_name || meta.title || '').toString().toLowerCase();
+      const addressStreet = (meta.address_street || '').toString();
+      const addressTownCity = (meta.address_town_city || '').toString();
+      const address =
+        `${addressStreet}${addressStreet && addressTownCity ? ', ' : ''}${addressTownCity}`.toLowerCase();
+
+      const city = norm(addressTownCity);
+      const countryFromMeta = norm(meta.country);
+
+      const propertyType = norm(meta.property_type);
+
+      const propPrice = extractPropertyPrice(l, meta);
+      const tokenPrice = extractTokenPrice(l, meta);
+
+      if (propertyTypeParam && propertyTypeParam !== 'all') {
+        const match =
+          propertyType.toLowerCase().replace(/[^a-z0-9]/g, '') ===
+          propertyTypeParam.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!match) return false;
+      }
+
+      if (countryParam && countryParam !== 'all') {
+        if (countryFromMeta && !countryFromMeta.includes(countryParam)) return false;
+      }
+
+      if (cityParam && cityParam !== 'all' && !city.includes(cityParam)) return false;
+
+      if (ppMin != null && propPrice != null && propPrice < ppMin) return false;
+      if (ppMax != null && propPrice != null && propPrice > ppMax) return false;
+
+      if (tpMin != null && tokenPrice != null && tokenPrice < tpMin) return false;
+      if (tpMax != null && tokenPrice != null && tokenPrice > tpMax) return false;
+
+      if (search) {
+        const property =
+          `${l.listing?.listingId} ${propertyName} ${address} ${propertyType}`.toLowerCase();
+        if (!property.includes(search)) return false;
+      }
+
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  const suggestions: { title: string; subtitle: string }[] = [];
+  for (const l of filteredListings) {
+    try {
+      const meta = l.metadata ? JSON.parse(l.metadata) : {};
+      const propertyName = (meta.property_name || meta.title || '').toString().trim();
+      const city = (meta.address_town_city || '').toString().trim();
+      const postcode = (meta.postcode || meta.zip || '').toString().trim();
+
+      const title = propertyName || String(l.listing?.listingId);
+      if (!title) continue;
+
+      const subtitle = [city, postcode].filter(Boolean).join(' • ');
+      suggestions.push({ title, subtitle });
+    } catch {}
+  }
 
   return (
     <Shell variant={'basic'} className="gap-10 pb-32">
       <Suspense fallback={<div>Loading filters...</div>}>
-        <FilterTabs />
+        <FilterTabs
+          townCityOptions={townCityOptions}
+          suggestions={suggestions}
+          searchParams={searchParams}
+        />
       </Suspense>
-      <div className="flex flex-col gap-6 px-4 md:px-[50px]">
+
+      <div className="md:px={[50]} flex flex-col gap-6 px-4">
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-4">
             <Button>Marketplace</Button>
@@ -143,42 +145,24 @@ export default async function Marketplace() {
           </div>
         </div>
 
-        {listings && listings.length >= 1 ? (
-          <div data-market-grid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {listings.map(async listing => {
-              const data = JSON.parse(listing.metadata);
-              const fileUrls = await Promise.all(
-                data.files
-                  .filter((fileKey: string) => fileKey.split('/')[2] == 'property_image')
-                  .map(async (fileKey: string) => await generatePresignedUrl(fileKey))
-              );
-              // const expired = ['112,508', '112,161', '112,434', '101,264'];
-              const blockNumber = Number(
-                listing.listing.listingDetails.listingExpiry.replace(/,/g, '')
-              );
-
-              const isPassed = await checkBlock(blockNumber);
-              // expired.includes(listing.listing.listingDetails.listingExpiry
-              if (isPassed) {
-                return null;
-              }
-              const listingId = String(listing.listing.listingId);
+        {filteredListings.length ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {filteredListings.map(listing => {
+              const data = listing.metadata ? JSON.parse(listing.metadata) : {};
               return (
-                <div key={listingId} data-listing-id={listingId}>
-                  <MarketCard
-                    //   price={listing.listing.listingDetails.tokenPrice}
-                    id={listingId}
-                    fileUrls={listing.fileUrls || []}
-                    details={listing.listing.listingDetails}
-                    tokenRemaining={listing.tokenRemaining}
-                    metaData={data}
-                  />
-                </div>
+                <MarketCard
+                  key={listing.listing.listingId}
+                  id={listing.listing.listingId}
+                  fileUrls={listing.fileUrls || []}
+                  details={listing.listing.listingDetails}
+                  tokenRemaining={listing.tokenRemaining}
+                  metaData={data}
+                />
               );
             })}
           </div>
         ) : (
-          <div></div>
+          <div />
         )}
       </div>
     </Shell>
