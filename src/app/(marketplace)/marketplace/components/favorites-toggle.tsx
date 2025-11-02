@@ -1,79 +1,12 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useWalletContext } from '@/context/wallet-context';
-
-export function favKey(addr?: string) {
-  return `market_favorites:${addr || 'guest'}`;
-}
-
-export function readFavs(addr?: string): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(favKey(addr));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function writeFavs(next: string[], addr?: string) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(favKey(addr), JSON.stringify([...new Set(next)]));
-  } catch {}
-}
+import { useFavourites } from '@/hooks/use-favourites';
 
 export default function FavoritesToggle() {
-  const { selectedAccount } = useWalletContext();
-  const address = selectedAccount?.[0]?.address as string | undefined;
+  const { favs } = useFavourites();
 
   const [showFavs, setShowFavs] = useState(false);
-  const [favs, setFavs] = useState<string[]>([]);
-
-  useEffect(() => {
-    const sync = () => setFavs(readFavs(address));
-    sync();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === favKey(address)) sync();
-    };
-    window.addEventListener('storage', onStorage);
-    const onLocal = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { address?: string } | undefined;
-      if ((detail?.address || 'guest') === (address || 'guest')) sync();
-    };
-    window.addEventListener('favorites:update', onLocal as EventListener);
-    let bc: BroadcastChannel | null = null;
-    if (typeof BroadcastChannel !== 'undefined') {
-      bc = new BroadcastChannel('favorites');
-      bc.onmessage = (msg) => {
-        if ((msg?.data?.address || 'guest') === (address || 'guest')) sync();
-      };
-    }
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('favorites:update', onLocal as EventListener);
-      if (bc) bc.close();
-    };
-  }, [address]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('market_showFavorites');
-    if (stored === 'true') setShowFavs(true);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('market_showFavorites', String(showFavs));
-    try {
-      window.dispatchEvent(new CustomEvent('favorites:view', { detail: { on: showFavs } }));
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('favorites');
-        bc.postMessage({ type: 'view', on: showFavs });
-        bc.close();
-      }
-    } catch {}
-  }, [showFavs]);
 
   const label = useMemo(() => (showFavs ? 'Showing Favorites' : 'Show Favorites'), [showFavs]);
 

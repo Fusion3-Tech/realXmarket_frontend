@@ -9,7 +9,7 @@ import { ImageIcon } from 'lucide-react';
 import { formatAPY, formatPrice, truncate } from '@/lib/utils';
 import ImageComponent from '../image-component';
 import { useWalletContext } from '@/context/wallet-context';
-import { favKey, readFavs, writeFavs } from '@/app/(marketplace)/marketplace/components/favorites-toggle';
+import { useFavourites } from '@/hooks/use-favourites';
 
 export default function MarketCard({
   id,
@@ -26,63 +26,12 @@ export default function MarketCard({
   metaData: IProperty;
   price?: any;
 }) {
-  const { selectedAccount } = useWalletContext();
-  const address = selectedAccount?.[0]?.address as string | undefined;
+  const { favs, toggleFav } = useFavourites();
+  const isFav = favs.indexOf(id) >= 0;
 
-  const [isFav, setIsFav] = useState(false);
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-
-  useEffect(() => {
-    const favs = readFavs(address);
-    setIsFav(favs.includes(id));
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === favKey(address)) setIsFav(readFavs(address).includes(id));
-      if (e.key === 'market_showFavorites') setShowOnlyFavorites(localStorage.getItem('market_showFavorites') === 'true');
-    };
-    window.addEventListener('storage', onStorage);
-    const onView = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { on?: boolean } | undefined;
-      if (typeof detail?.on === 'boolean') setShowOnlyFavorites(detail.on);
-    };
-    window.addEventListener('favorites:view', onView as EventListener);
-    let bc: BroadcastChannel | null = null;
-    if (typeof BroadcastChannel !== 'undefined') {
-      bc = new BroadcastChannel('favorites');
-      bc.onmessage = (msg) => {
-        if (msg?.data?.type === 'view') setShowOnlyFavorites(!!msg?.data?.on);
-        if ((msg?.data?.address || 'guest') === (address || 'guest')) {
-          setIsFav(readFavs(address).includes(id));
-        }
-      };
-    }
-    setShowOnlyFavorites(localStorage.getItem('market_showFavorites') === 'true');
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('favorites:view', onView as EventListener);
-      if (bc) bc.close();
-    };
-  }, [id, address]);
-
-  const toggleFav = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const favs = readFavs(address);
-    const next = favs.includes(id) ? favs.filter((x) => x !== id) : [...favs, id];
-    writeFavs(next, address);
-    setIsFav(next.includes(id));
-    try {
-      window.dispatchEvent(new CustomEvent('favorites:update', { detail: { address } }));
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('favorites');
-        bc.postMessage({ type: 'update', address });
-        bc.close();
-      }
-    } catch {}
-  };
-
-  if (showOnlyFavorites && !isFav) {
-    return null;
-  }
+  // if (showOnlyFavorites && !isFav) {
+  //   return null;
+  // }
 
   return (
     <Link
@@ -142,7 +91,7 @@ export default function MarketCard({
           </div>
 
           <button
-            onClick={toggleFav}
+            onClick={() => toggleFav(id)}
             aria-pressed={isFav}
             aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
             className="rounded-full p-1"
