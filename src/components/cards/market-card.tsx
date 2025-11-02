@@ -17,8 +17,7 @@ export default function MarketCard({
   tokenRemaining,
   metaData,
   details,
-  price,
-  showOnlyFavorites
+  price
 }: {
   id: string;
   fileUrls: string[];
@@ -26,21 +25,42 @@ export default function MarketCard({
   tokenRemaining: any;
   metaData: IProperty;
   price?: any;
-  showOnlyFavorites?: boolean;
 }) {
   const { selectedAccount } = useWalletContext();
   const address = selectedAccount?.[0]?.address as string | undefined;
 
   const [isFav, setIsFav] = useState(false);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   useEffect(() => {
     const favs = readFavs(address);
     setIsFav(favs.includes(id));
     const onStorage = (e: StorageEvent) => {
       if (e.key === favKey(address)) setIsFav(readFavs(address).includes(id));
+      if (e.key === 'market_showFavorites') setShowOnlyFavorites(localStorage.getItem('market_showFavorites') === 'true');
     };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    const onView = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { on?: boolean } | undefined;
+      if (typeof detail?.on === 'boolean') setShowOnlyFavorites(detail.on);
+    };
+    window.addEventListener('favorites:view', onView as EventListener);
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      bc = new BroadcastChannel('favorites');
+      bc.onmessage = (msg) => {
+        if (msg?.data?.type === 'view') setShowOnlyFavorites(!!msg?.data?.on);
+        if ((msg?.data?.address || 'guest') === (address || 'guest')) {
+          setIsFav(readFavs(address).includes(id));
+        }
+      };
+    }
+    setShowOnlyFavorites(localStorage.getItem('market_showFavorites') === 'true');
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('favorites:view', onView as EventListener);
+      if (bc) bc.close();
+    };
   }, [id, address]);
 
   const toggleFav = (e: MouseEvent) => {

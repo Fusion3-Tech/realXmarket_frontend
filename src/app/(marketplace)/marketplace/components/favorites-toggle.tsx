@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useWalletContext } from '@/context/wallet-context';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export function favKey(addr?: string) {
   return `market_favorites:${addr || 'guest'}`;
@@ -33,10 +32,6 @@ export default function FavoritesToggle() {
   const [showFavs, setShowFavs] = useState(false);
   const [favs, setFavs] = useState<string[]>([]);
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const sync = () => setFavs(readFavs(address));
     sync();
@@ -64,32 +59,29 @@ export default function FavoritesToggle() {
   }, [address]);
 
   useEffect(() => {
-    const isOn = searchParams.get('favorites') === '1';
-    setShowFavs(isOn);
-  }, [searchParams]);
+    const stored = localStorage.getItem('market_showFavorites');
+    if (stored === 'true') setShowFavs(true);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('market_showFavorites', String(showFavs));
+    try {
+      window.dispatchEvent(new CustomEvent('favorites:view', { detail: { on: showFavs } }));
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('favorites');
+        bc.postMessage({ type: 'view', on: showFavs });
+        bc.close();
+      }
+    } catch {}
+  }, [showFavs]);
 
   const label = useMemo(() => (showFavs ? 'Showing Favorites' : 'Show Favorites'), [showFavs]);
-
-  function toggleUrlParam(nextOn: boolean) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (nextOn) {
-      params.set('favorites', '1');
-    } else {
-      params.delete('favorites');
-    }
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }
 
   return (
     <div className="flex items-center gap-2">
       <Button
         variant={showFavs ? 'default' : 'outline'}
-        onClick={() => {
-          const next = !showFavs;
-          setShowFavs(next);
-          toggleUrlParam(next);
-        }}
+        onClick={() => setShowFavs((v) => !v)}
       >
         {label}
       </Button>

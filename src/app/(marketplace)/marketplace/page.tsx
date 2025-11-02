@@ -24,11 +24,7 @@ import { Suspense } from 'react';
 import FavoritesToggle from './components/favorites-toggle';
 
 export const maxDuration = 300;
-export default async function Marketplace({
-  searchParams
-}: {
-  searchParams?: { favorites?: string };
-}) {
+export default async function Marketplace() {
   const data = await getAllOngoingListings();
   const assets = await getAllAssets();
 
@@ -125,8 +121,6 @@ export default async function Marketplace({
     (item): item is Listing => item !== undefined
   );
 
-  const showFavoritesOnly = searchParams?.favorites === '1';
-
   return (
     <Shell variant={'basic'} className="gap-10 pb-32">
       <Suspense fallback={<div>Loading filters...</div>}>
@@ -178,7 +172,6 @@ export default async function Marketplace({
                     details={listing.listing.listingDetails}
                     tokenRemaining={listing.tokenRemaining}
                     metaData={data}
-                    showOnlyFavorites={showFavoritesOnly}
                   />
                 </div>
               );
