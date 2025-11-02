@@ -17,7 +17,8 @@ export default function MarketCard({
   tokenRemaining,
   metaData,
   details,
-  price
+  price,
+  showOnlyFavorites
 }: {
   id: string;
   fileUrls: string[];
@@ -25,6 +26,7 @@ export default function MarketCard({
   tokenRemaining: any;
   metaData: IProperty;
   price?: any;
+  showOnlyFavorites?: boolean;
 }) {
   const { selectedAccount } = useWalletContext();
   const address = selectedAccount?.[0]?.address as string | undefined;
@@ -57,6 +59,10 @@ export default function MarketCard({
       }
     } catch {}
   };
+
+  if (showOnlyFavorites && !isFav) {
+    return null;
+  }
 
   return (
     <Link
