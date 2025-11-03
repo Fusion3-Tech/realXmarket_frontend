@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, MouseEvent } from 'react';
+import { useEffect, useState, MouseEvent, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Icons } from '../icons';
@@ -9,7 +9,7 @@ import { ImageIcon } from 'lucide-react';
 import { formatAPY, formatPrice, truncate } from '@/lib/utils';
 import ImageComponent from '../image-component';
 import { useWalletContext } from '@/context/wallet-context';
-import { useFavourites } from '@/hooks/use-favourites';
+import { readFavs, writeFavs } from '@/app/(marketplace)/marketplace/utils';
 
 export default function MarketCard({
   id,
@@ -26,12 +26,38 @@ export default function MarketCard({
   metaData: IProperty;
   price?: any;
 }) {
-  const { favs, toggleFav } = useFavourites();
-  const isFav = favs.indexOf(id) >= 0;
+  const { selectedAccount } = useWalletContext();
+  const address = selectedAccount?.[0]?.address as string | undefined;
 
-  // if (showOnlyFavorites && !isFav) {
-  //   return null;
-  // }
+  const [favs, setFavs] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await readFavs(address);
+        if (!cancelled) setFavs(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) setFavs([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  const isFav = useMemo(() => favs.includes(id), [favs, id]);
+
+  const toggleFav = useCallback(() => {
+    setFavs(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev];
+      Promise.resolve(writeFavs(next, address)).catch(() => {
+        /* optionally revert on error */
+      });
+      return next;
+    });
+  }, [address, id]);
+
 
   return (
     <Link
@@ -91,7 +117,10 @@ export default function MarketCard({
           </div>
 
           <button
-            onClick={() => toggleFav(id)}
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFav();
+            }}
             aria-pressed={isFav}
             aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
             className="rounded-full p-1"

@@ -7,6 +7,7 @@ const schema = z.object({
   accountKey: z.string().optional(),
   investorType: z.string().optional(),
   isWhiteListed: z.string().optional(),
+  favouritesKey: z.string().optional(),
   asset: z.string().optional()
 });
 

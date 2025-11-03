@@ -3,6 +3,7 @@ import { generatePresignedUrl } from '@/lib/s3';
 import { hexToString } from '@/lib/utils';
 import { Listing } from '@/types';
 import { RawListing } from './page';
+import { getCookieStorage, setCookieStorage } from '@/lib/cookie-storage';
 
 export function getKeyValue<T = unknown>(obj: unknown, key: string): T | undefined {
   if (obj && typeof obj === 'object' && key in (obj as Record<string, unknown>)) {
@@ -129,3 +130,26 @@ export async function fetchListingMetadata(
 
   return listingData;
 }
+
+function favKey(addr?: string): string {
+  return `market_favorites:${addr || 'guest'}`;
+}
+
+export async function readFavs(addr?: string): Promise<string[]> {
+  try {
+    const raw = await getCookieStorage('favouritesKey');
+    // TODO: get per address
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function writeFavs(next: string[], addr?: string) {
+  try {
+    // TODO: get per address
+    await setCookieStorage('favouritesKey', JSON.stringify([...new Set(next)]));
+  } catch {}
+}
+

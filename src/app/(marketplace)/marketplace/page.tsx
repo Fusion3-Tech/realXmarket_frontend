@@ -10,9 +10,11 @@ import {
   extractTokenPrice,
   fetchListingMetadata,
   norm,
-  parseRange
+  parseRange,
+  readFavs
 } from './utils';
 import { AnyJson } from '@polkadot/types/types';
+import { getCookieStorage } from '@/lib/cookie-storage';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -28,8 +30,13 @@ export type RawListing = {
 
 export default async function Marketplace({ searchParams }: MarketplaceProps) {
   const rawListings = (await getAllOngoingListings()).filter(Boolean) as RawListing[];
-
   const listingData = await fetchListingMetadata(rawListings);
+  const address = await getCookieStorage('accountKey');
+
+  const favs: string[] = await readFavs(address);
+
+  const mode = searchParams?.mode === 'favs' ? 'favs' : 'all';
+  const showFavs = mode === 'favs';
 
   const townCitySet = new Map<string, string>();
   for (const l of listingData) {
@@ -55,6 +62,8 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
 
   const filteredListings = listingData.filter(l => {
     try {
+      if(showFavs && favs?.indexOf(l.listing.listingId)) return false;
+
       const meta = l.metadata ? JSON.parse(l.metadata) : {};
 
       const propertyName = (meta.property_name || meta.title || '').toString().toLowerCase();
