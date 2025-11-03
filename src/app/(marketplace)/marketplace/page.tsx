@@ -12,6 +12,7 @@ import {
   parseRange
 } from './utils';
 import { AnyJson } from '@polkadot/types/types';
+import Pagination from './components/pagination';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -144,21 +145,27 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
         </div>
 
         {filteredListings.length ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredListings.map(listing => {
-              const data = listing.metadata ? JSON.parse(listing.metadata) : {};
-              return (
-                <MarketCard
-                  key={listing.listing.listingId}
-                  id={listing.listing.listingId}
-                  fileUrls={listing.fileUrls || []}
-                  details={listing.listing.listingDetails}
-                  tokenRemaining={listing.tokenRemaining}
-                  metaData={data}
-                />
-              );
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {filteredListings.map(listing => {
+                const data = listing.metadata ? JSON.parse(listing.metadata) : {};
+                return (
+                  <MarketCard
+                    key={listing.listing.listingId}
+                    id={listing.listing.listingId}
+                    fileUrls={listing.fileUrls || []}
+                    details={listing.listing.listingDetails}
+                    tokenRemaining={listing.tokenRemaining}
+                    metaData={data}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="mt-6">
+              <Pagination />
+            </div>
+          </>
         ) : (
           <div />
         )}
