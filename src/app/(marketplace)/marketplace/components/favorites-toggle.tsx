@@ -22,7 +22,7 @@ export default function FavoritesToggle() {
     })();
     const params = new URLSearchParams(sp);
     setShowFavs(params.get('mode') === 'favs')
-  }, []);
+  }, [address]);
 
   const toggleShow = () => {
     const params = new URLSearchParams(sp);

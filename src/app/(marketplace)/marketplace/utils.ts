@@ -132,15 +132,15 @@ export async function fetchListingMetadata(
 }
 
 function favKey(addr?: string): string {
-  return `market_favorites:${addr || 'guest'}`;
+  return `${addr || 'guest'}`;
 }
 
 export async function readFavs(addr?: string): Promise<string[]> {
   try {
     const raw = await getCookieStorage('favouritesKey');
-    // TODO: get per address
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+
+    const parsed = raw ? JSON.parse(raw) : {};
+    return Array.isArray(parsed[favKey(addr)]) ? parsed[favKey(addr)] : [];
   } catch {
     return [];
   }
@@ -148,8 +148,11 @@ export async function readFavs(addr?: string): Promise<string[]> {
 
 export async function writeFavs(next: string[], addr?: string) {
   try {
+    const raw = await getCookieStorage('favouritesKey');
+    const record: Record<string, string[]> = JSON.parse(raw || '{}');
+    record[favKey(addr)] = next;
     // TODO: get per address
-    await setCookieStorage('favouritesKey', JSON.stringify([...new Set(next)]));
+    await setCookieStorage('favouritesKey', JSON.stringify(record));
   } catch {}
 }
 
