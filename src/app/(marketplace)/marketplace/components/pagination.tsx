@@ -2,12 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 
-type PaginationUIProps = {
+type PaginationProps = {
   currentPage?: number;
   totalPages?: number;
 };
 
-export default function PaginationUI(_: PaginationUIProps) {
+export default function Pagination(_: PaginationProps) {
   return (
     <nav
       aria-label="Pagination"

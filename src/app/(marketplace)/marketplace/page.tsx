@@ -12,7 +12,7 @@ import {
   parseRange
 } from './utils';
 import { AnyJson } from '@polkadot/types/types';
-import PaginationUI from './components/pagination';
+import Pagination from './components/pagination';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -161,9 +161,9 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
                 );
               })}
             </div>
-            
+
             <div className="mt-6">
-              <PaginationUI />
+              <Pagination />
             </div>
           </>
         ) : (
