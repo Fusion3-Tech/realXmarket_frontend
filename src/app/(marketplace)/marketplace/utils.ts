@@ -151,7 +151,6 @@ export async function writeFavs(next: string[], addr?: string) {
     const raw = await getCookieStorage('favouritesKey');
     const record: Record<string, string[]> = JSON.parse(raw || '{}');
     record[favKey(addr)] = next;
-    // TODO: get per address
     await setCookieStorage('favouritesKey', JSON.stringify(record));
   } catch {}
 }
