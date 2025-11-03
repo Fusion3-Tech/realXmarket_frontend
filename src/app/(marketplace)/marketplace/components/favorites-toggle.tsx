@@ -16,12 +16,12 @@ export default function FavoritesToggle() {
   const [favs, setFavs] = useState<string[]>([]);
 
   useEffect(() => {
-    (async() => {
+    (async () => {
       const _favs = await readFavs(address);
       setFavs(_favs);
     })();
     const params = new URLSearchParams(sp);
-    setShowFavs(params.get('mode') === 'favs')
+    setShowFavs(params.get('mode') === 'favs');
   }, [address]);
 
   const toggleShow = () => {
@@ -35,16 +35,13 @@ export default function FavoritesToggle() {
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '?', { scroll: false });
     router.refresh();
-  }
+  };
 
   const label = useMemo(() => (showFavs ? 'Show All' : 'Show Favorites'), [showFavs]);
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant={showFavs ? 'default' : 'outline'}
-        onClick={toggleShow}
-      >
+      <Button variant={showFavs ? 'default' : 'outline'} onClick={toggleShow}>
         {label}
       </Button>
       {showFavs && (

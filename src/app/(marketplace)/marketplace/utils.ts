@@ -155,4 +155,3 @@ export async function writeFavs(next: string[], addr?: string) {
     await setCookieStorage('favouritesKey', JSON.stringify(record));
   } catch {}
 }
-

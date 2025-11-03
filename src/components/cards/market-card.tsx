@@ -58,7 +58,6 @@ export default function MarketCard({
     });
   }, [address, id]);
 
-
   return (
     <Link
       href={`/marketplace/${id}`}
@@ -117,7 +116,7 @@ export default function MarketCard({
           </div>
 
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               toggleFav();
             }}
@@ -144,7 +143,9 @@ export default function MarketCard({
           <div className="flex items-center justify-between">
             <dt className="font-sans text-[0.875rem]/[1.5rem]">
               {tokenRemaining === '0' ? (
-                <span className="rounded bg-primary-300 p-1 font-bold text-white">Sold Out</span>
+                <span className="rounded bg-primary-300 p-1 font-bold text-white">
+                  Sold Out
+                </span>
               ) : (
                 <>
                   Tokens <span className="font-bold">{tokenRemaining}</span>
