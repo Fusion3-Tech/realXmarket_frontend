@@ -62,7 +62,7 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
 
   const filteredListings = listingData.filter(l => {
     try {
-      if (showFavs && favs?.indexOf(l.listing.listingId)) return false;
+      if (showFavs && favs?.indexOf(l.listing.listingId) < 0) return false;
 
       const meta = l.metadata ? JSON.parse(l.metadata) : {};
 

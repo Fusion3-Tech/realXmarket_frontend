@@ -32,17 +32,18 @@ export default function MarketCard({
   const [favs, setFavs] = useState<string[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
     (async () => {
       try {
         const list = await readFavs(address);
-        if (!cancelled) setFavs(Array.isArray(list) ? list : []);
+        if (!alive) return;
+        setFavs(Array.isArray(list) ? list : []);
       } catch {
-        if (!cancelled) setFavs([]);
+        if (alive) setFavs([]);
       }
     })();
     return () => {
-      cancelled = true;
+      alive = false;
     };
   }, [address]);
 
