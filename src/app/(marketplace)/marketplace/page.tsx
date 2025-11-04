@@ -13,6 +13,8 @@ import {
 } from './utils';
 import { AnyJson } from '@polkadot/types/types';
 import Pagination from './components/pagination';
+// Testing helper
+import { addMockListingsForTesting } from './mock-data-helper';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -27,9 +29,17 @@ export type RawListing = {
 };
 
 export default async function Marketplace({ searchParams }: MarketplaceProps) {
+  // Pagination settings
+  const ITEMS_PER_PAGE = 12; // TEMPORARY - Set to small number for testing 5, change to 12 for production!
+  const currentPage = parseInt(searchParams?.page ?? '1', 10);
+
   const rawListings = (await getAllOngoingListings()).filter(Boolean) as RawListing[];
 
-  const listingData = await fetchListingMetadata(rawListings);
+  // TEMPORARY - rename back to listingData for production!
+  const listingData1 = await fetchListingMetadata(rawListings);
+
+  // TEMPORARY - remove before production!
+  let listingData = addMockListingsForTesting(listingData1, 100);
 
   const townCitySet = new Map<string, string>();
   for (const l of listingData) {
@@ -118,6 +128,15 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
     } catch {}
   }
 
+  // Calculate pagination
+  const totalListings = filteredListings.length;
+  const totalPages = Math.ceil(totalListings / ITEMS_PER_PAGE);
+
+  // Calculate which listings to show on current page
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedListings = filteredListings.slice(startIndex, endIndex);
+
   return (
     <Shell variant={'basic'} className="gap-10 pb-32">
       <Suspense fallback={<div>Loading filters...</div>}>
@@ -147,7 +166,7 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
         {filteredListings.length ? (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {filteredListings.map(listing => {
+              {paginatedListings.map(listing => {
                 const data = listing.metadata ? JSON.parse(listing.metadata) : {};
                 return (
                   <MarketCard
@@ -163,7 +182,7 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
             </div>
 
             <div className="mt-6">
-              <Pagination />
+              <Pagination currentPage={currentPage} totalPages={totalPages} />
             </div>
           </>
         ) : (
