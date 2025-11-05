@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Skeleton from '@/components/skelton';
 import Pagination from './pagination';
 
-// GraphQL query with filter variables and pagination and pagination
+// GraphQL query with filter variables and pagination
 const GET_PROPERTY_LISTINGS = gql`
   query GetPropertyListings(
     $first: Int
