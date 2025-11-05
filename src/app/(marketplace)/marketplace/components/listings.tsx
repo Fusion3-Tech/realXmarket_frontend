@@ -61,7 +61,7 @@ export default function Listings() {
   const propertyPrice = searchParams?.get('propertyPrice') ?? '';
   const tokenPrice = searchParams?.get('tokenPrice') ?? '';
   const propertyType = searchParams?.get('propertyType') ?? '';
-  
+
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams?.get('page') ?? '1', 10);
   const ITEMS_PER_PAGE = 12; // Match the page size from page.tsx
@@ -77,10 +77,10 @@ export default function Listings() {
   const buildFilterObject = () => {
     // Calculate offset for pagination: (page - 1) * items_per_page
     const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-    
+
     const variables: any = {
-      first: ITEMS_PER_PAGE,  // Number of items per page
-      offset: offset,         // Skip items from previous pages
+      first: ITEMS_PER_PAGE, // Number of items per page
+      offset: offset, // Skip items from previous pages
       orderBy: ['BLOCK_NUMBER_DESC']
     };
 
@@ -162,7 +162,7 @@ export default function Listings() {
               <PropertyListingCard key={property.id} listing={property} />
             ))}
           </div>
-          
+
           {totalPages > 1 && (
             <div className="mt-6">
               <Pagination currentPage={currentPage} totalPages={totalPages} />
