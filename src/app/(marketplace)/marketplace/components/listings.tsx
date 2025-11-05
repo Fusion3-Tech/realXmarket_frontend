@@ -4,15 +4,18 @@ import { gql, useQuery } from '@apollo/client';
 import PropertyListingCard from './property-listing-card';
 import { useSearchParams } from 'next/navigation';
 import Skeleton from '@/components/skelton';
+import Pagination from './pagination';
 
-// GraphQL query with filter variables
+// GraphQL query with filter variables and pagination and pagination
 const GET_PROPERTY_LISTINGS = gql`
   query GetPropertyListings(
     $first: Int
+    $offset: Int
     $orderBy: [PropertyListingsOrderBy!]
     $filter: PropertyListingFilter
   ) {
-    propertyListings(first: $first, orderBy: $orderBy, filter: $filter) {
+    propertyListings(first: $first, offset: $offset, orderBy: $orderBy, filter: $filter) {
+      totalCount
       nodes {
         id
         nftItemId
@@ -58,6 +61,10 @@ export default function Listings() {
   const propertyPrice = searchParams?.get('propertyPrice') ?? '';
   const tokenPrice = searchParams?.get('tokenPrice') ?? '';
   const propertyType = searchParams?.get('propertyType') ?? '';
+  
+  // Get current page from URL (default to 1)
+  const currentPage = parseInt(searchParams?.get('page') ?? '1', 10);
+  const ITEMS_PER_PAGE = 12; // Match the page size from page.tsx
 
   const isPropertyPrice = propertyPrice ? propertyPrice?.split('-').map(Number) : null;
   const isTokenPrice = tokenPrice ? tokenPrice?.split('-').map(Number) : null;
@@ -68,8 +75,12 @@ export default function Listings() {
   const maxTokenPrice = isTokenPrice ? isTokenPrice[1] : 10000;
 
   const buildFilterObject = () => {
+    // Calculate offset for pagination: (page - 1) * items_per_page
+    const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+    
     const variables: any = {
-      first: 10,
+      first: ITEMS_PER_PAGE,  // Number of items per page
+      offset: offset,         // Skip items from previous pages
       orderBy: ['BLOCK_NUMBER_DESC']
     };
 
@@ -138,14 +149,26 @@ export default function Listings() {
     );
   }
 
+  // Calculate total pages from GraphQL totalCount
+  const totalCount = data?.propertyListings?.totalCount ?? 0;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   return (
     <>
       {data && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {data.propertyListings.nodes.map((property: any) => (
-            <PropertyListingCard key={property.id} listing={property} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {data.propertyListings.nodes.map((property: any) => (
+              <PropertyListingCard key={property.id} listing={property} />
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination currentPage={currentPage} totalPages={totalPages} />
+            </div>
+          )}
+        </>
       )}
     </>
   );
