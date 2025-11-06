@@ -13,8 +13,6 @@ import {
 } from './utils';
 import { AnyJson } from '@polkadot/types/types';
 import Pagination from './components/pagination';
-// Testing helper
-import { addMockListingsForTesting } from './mock-data-helper';
 import { ITEMS_PER_PAGE, DEFAULT_PAGE, FILTER_ALL_VALUE } from './constants';
 
 // This doesn't seem to be used anywhere.
@@ -35,11 +33,7 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
 
   const rawListings = (await getAllOngoingListings()).filter(Boolean) as RawListing[];
 
-  // TEMPORARY - rename back to listingData for production!
-  const listingData1 = await fetchListingMetadata(rawListings);
-
-  // TEMPORARY - remove before production!
-  let listingData = addMockListingsForTesting(listingData1, 100);
+  const listingData = await fetchListingMetadata(rawListings);
 
   const townCitySet = new Map<string, string>();
   for (const l of listingData) {
@@ -81,18 +75,18 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
       const propPrice = extractPropertyPrice(l, meta);
       const tokenPrice = extractTokenPrice(l, meta);
 
-      if (propertyTypeParam && propertyTypeParam !== 'FILTER_ALL_VALUE') {
+      if (propertyTypeParam && propertyTypeParam !== FILTER_ALL_VALUE) {
         const match =
           propertyType.toLowerCase().replace(/[^a-z0-9]/g, '') ===
           propertyTypeParam.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (!match) return false;
       }
 
-      if (countryParam && countryParam !== 'FILTER_ALL_VALUE') {
+      if (countryParam && countryParam !== FILTER_ALL_VALUE) {
         if (countryFromMeta && !countryFromMeta.includes(countryParam)) return false;
       }
 
-      if (cityParam && cityParam !== 'FILTER_ALL_VALUE' && !city.includes(cityParam))
+      if (cityParam && cityParam !== FILTER_ALL_VALUE && !city.includes(cityParam))
         return false;
 
       if (ppMin != null && propPrice != null && propPrice < ppMin) return false;
