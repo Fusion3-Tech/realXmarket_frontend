@@ -80,7 +80,10 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
           return (
             <li key={pageNum} className="flex items-center gap-2">
               {showEllipsis && (
-                <span key={`ellipsis-${pageNum}`} className="px-2 text-sm text-muted-foreground">
+                <span
+                  key={`ellipsis-${pageNum}`}
+                  className="px-2 text-sm text-muted-foreground"
+                >
                   ...
                 </span>
               )}
