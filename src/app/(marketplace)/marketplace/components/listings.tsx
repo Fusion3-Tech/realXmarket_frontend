@@ -74,8 +74,7 @@ export default function Listings() {
   const propertyType = searchParams?.get('propertyType') ?? '';
 
   // Get current page from URL (default to 1)
-  const currentPage = parseInt(searchParams?.get('page') ?? '1', 10);
-  const ITEMS_PER_PAGE = 12; // Match the page size from page.tsx
+  const currentPage = parseInt(searchParams?.get('page') ?? String(DEFAULT_PAGE), 10);
 
   const isPropertyPrice = propertyPrice ? propertyPrice?.split('-').map(Number) : null;
   const isTokenPrice = tokenPrice ? tokenPrice?.split('-').map(Number) : null;

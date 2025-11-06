@@ -23,11 +23,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/use-debounce';
 import { norm, parseRange } from './utils';
 import { Button } from '@/components/ui/button';
+import { FILTER_ALL_VALUE } from './constants';
 
 type SelectLabelType = React.ComponentProps<'select'> & React.ComponentProps<'label'>;
 
 const PROPERTY_TYPE_OPTIONS = [
-  { name: 'All', value: 'all' },
+  { name: 'All', value: FILTER_ALL_VALUE },
   { name: 'Apartment', value: 'apartment' },
   { name: 'Flat', value: 'flat' },
   { name: 'Bungalow', value: 'bungalow' },
@@ -37,7 +38,7 @@ const PROPERTY_TYPE_OPTIONS = [
 ];
 
 const COUNTRY_OPTIONS = [
-  { name: 'All', value: 'all' },
+  { name: 'All', value: FILTER_ALL_VALUE },
   { name: 'United kingdom', value: 'united kingdom' }
 ];
 
@@ -58,7 +59,7 @@ export default function FilterTabs({
 
   const TOWN_CITY_OPTIONS = useMemo(
     () =>
-      [{ name: 'All', value: 'all' }].concat(
+      [{ name: 'All', value: FILTER_ALL_VALUE }].concat(
         townCityOptions && townCityOptions.length ? townCityOptions : []
       ),
     [townCityOptions]
@@ -309,7 +310,7 @@ export default function FilterTabs({
                 label="Min (£)"
                 type="number"
                 inputMode="numeric"
-                value={tokenPrice ? tokenPrice[0] ?? '' : ''}
+                value={tokenPrice ? (tokenPrice[0] ?? '') : ''}
                 onChange={e => {
                   const raw = e.target.value;
                   setTokenPrice([
@@ -324,7 +325,7 @@ export default function FilterTabs({
                 label="Max (£)"
                 type="number"
                 inputMode="numeric"
-                value={tokenPrice ? tokenPrice[1] ?? '' : ''}
+                value={tokenPrice ? (tokenPrice[1] ?? '') : ''}
                 onChange={e => {
                   const raw = e.target.value;
                   setTokenPrice([
@@ -347,7 +348,7 @@ export default function FilterTabs({
               label="Min (£)"
               type="number"
               inputMode="numeric"
-              value={propertyPrice ? propertyPrice[0] ?? '' : ''}
+              value={propertyPrice ? (propertyPrice[0] ?? '') : ''}
               onChange={e => {
                 const raw = e.target.value;
                 setPropertyPrice([
@@ -362,7 +363,7 @@ export default function FilterTabs({
               label="Max (£)"
               type="number"
               inputMode="numeric"
-              value={propertyPrice ? propertyPrice[1] ?? '' : ''}
+              value={propertyPrice ? (propertyPrice[1] ?? '') : ''}
               onChange={e => {
                 const raw = e.target.value;
                 setPropertyPrice([

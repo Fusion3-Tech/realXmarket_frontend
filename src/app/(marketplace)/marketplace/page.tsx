@@ -15,11 +15,7 @@ import { AnyJson } from '@polkadot/types/types';
 import Pagination from './components/pagination';
 // Testing helper
 import { addMockListingsForTesting } from './mock-data-helper';
-import {
-  ITEMS_PER_PAGE,
-  DEFAULT_PAGE,
-  FILTER_ALL_VALUE
-} from './constants';
+import { ITEMS_PER_PAGE, DEFAULT_PAGE, FILTER_ALL_VALUE } from './constants';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -35,8 +31,7 @@ export type RawListing = {
 
 export default async function Marketplace({ searchParams }: MarketplaceProps) {
   // Pagination settings
-  const ITEMS_PER_PAGE = 12; // TEMPORARY - Set to small number for testing 5, change to 12 for production!
-  const currentPage = parseInt(searchParams?.page ?? '1', 10);
+  const currentPage = parseInt(searchParams?.page ?? String(DEFAULT_PAGE), 10);
 
   const rawListings = (await getAllOngoingListings()).filter(Boolean) as RawListing[];
 
@@ -97,7 +92,8 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
         if (countryFromMeta && !countryFromMeta.includes(countryParam)) return false;
       }
 
-      if (cityParam && cityParam !== 'FILTER_ALL_VALUE' && !city.includes(cityParam)) return false;
+      if (cityParam && cityParam !== 'FILTER_ALL_VALUE' && !city.includes(cityParam))
+        return false;
 
       if (ppMin != null && propPrice != null && propPrice < ppMin) return false;
       if (ppMax != null && propPrice != null && propPrice > ppMax) return false;
