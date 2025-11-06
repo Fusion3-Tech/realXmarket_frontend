@@ -17,7 +17,7 @@ import {
   FILTER_ALL_VALUE
 } from '../constants';
 
-// GraphQL query with filter variables and pagination and pagination
+// GraphQL query with filter variables and pagination
 const GET_PROPERTY_LISTINGS = gql`
   query GetPropertyListings(
     $first: Int
