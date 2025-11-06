@@ -5,6 +5,17 @@ import PropertyListingCard from './property-listing-card';
 import { useSearchParams } from 'next/navigation';
 import Skeleton from '@/components/skelton';
 import Pagination from './pagination';
+import {
+  ITEMS_PER_PAGE,
+  DEFAULT_PAGE,
+  DEFAULT_MIN_PROPERTY_PRICE,
+  DEFAULT_MAX_PROPERTY_PRICE,
+  DEFAULT_MIN_TOKEN_PRICE,
+  DEFAULT_MAX_TOKEN_PRICE,
+  DEFAULT_SORT_ORDER,
+  LOADING_SKELETON_COUNT,
+  FILTER_ALL_VALUE
+} from '../constants';
 
 // GraphQL query with filter variables and pagination and pagination
 const GET_PROPERTY_LISTINGS = gql`
@@ -69,10 +80,10 @@ export default function Listings() {
   const isPropertyPrice = propertyPrice ? propertyPrice?.split('-').map(Number) : null;
   const isTokenPrice = tokenPrice ? tokenPrice?.split('-').map(Number) : null;
 
-  const minPropertyPrice = isPropertyPrice ? isPropertyPrice[0] : 0;
-  const maxPropertyPrice = isPropertyPrice ? isPropertyPrice[1] : 1000000;
-  const minTokenPrice = isTokenPrice ? isTokenPrice[0] : 0;
-  const maxTokenPrice = isTokenPrice ? isTokenPrice[1] : 10000;
+  const minPropertyPrice = isPropertyPrice ? isPropertyPrice[0] : DEFAULT_MIN_PROPERTY_PRICE;
+  const maxPropertyPrice = isPropertyPrice ? isPropertyPrice[1] : DEFAULT_MAX_PROPERTY_PRICE;
+  const minTokenPrice = isTokenPrice ? isTokenPrice[0] : DEFAULT_MIN_TOKEN_PRICE;
+  const maxTokenPrice = isTokenPrice ? isTokenPrice[1] : DEFAULT_MAX_TOKEN_PRICE;
 
   const buildFilterObject = () => {
     // Calculate offset for pagination: (page - 1) * items_per_page
@@ -81,7 +92,7 @@ export default function Listings() {
     const variables: any = {
       first: ITEMS_PER_PAGE, // Number of items per page
       offset: offset, // Skip items from previous pages
-      orderBy: ['BLOCK_NUMBER_DESC']
+      orderBy: [DEFAULT_SORT_ORDER]
     };
 
     if (
@@ -128,7 +139,7 @@ export default function Listings() {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-4 rounded-lg sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: LOADING_SKELETON_COUNT }).map((_, i) => (
           <Skeleton
             key={i}
             className="h-[442px] w-full md:h-[383px] md:w-[320px] lg:h-[366px] lg:w-[317px]"

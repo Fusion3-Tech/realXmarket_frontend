@@ -15,6 +15,11 @@ import { AnyJson } from '@polkadot/types/types';
 import Pagination from './components/pagination';
 // Testing helper
 import { addMockListingsForTesting } from './mock-data-helper';
+import {
+  ITEMS_PER_PAGE,
+  DEFAULT_PAGE,
+  FILTER_ALL_VALUE
+} from './constants';
 
 // This doesn't seem to be used anywhere.
 export const maxDuration = 300;
@@ -81,18 +86,18 @@ export default async function Marketplace({ searchParams }: MarketplaceProps) {
       const propPrice = extractPropertyPrice(l, meta);
       const tokenPrice = extractTokenPrice(l, meta);
 
-      if (propertyTypeParam && propertyTypeParam !== 'all') {
+      if (propertyTypeParam && propertyTypeParam !== 'FILTER_ALL_VALUE') {
         const match =
           propertyType.toLowerCase().replace(/[^a-z0-9]/g, '') ===
           propertyTypeParam.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (!match) return false;
       }
 
-      if (countryParam && countryParam !== 'all') {
+      if (countryParam && countryParam !== 'FILTER_ALL_VALUE') {
         if (countryFromMeta && !countryFromMeta.includes(countryParam)) return false;
       }
 
-      if (cityParam && cityParam !== 'all' && !city.includes(cityParam)) return false;
+      if (cityParam && cityParam !== 'FILTER_ALL_VALUE' && !city.includes(cityParam)) return false;
 
       if (ppMin != null && propPrice != null && propPrice < ppMin) return false;
       if (ppMax != null && propPrice != null && propPrice > ppMax) return false;
