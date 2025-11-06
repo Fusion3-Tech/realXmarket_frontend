@@ -14,9 +14,14 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
 
   // Function to change page while preserving other search params
   const goToPage = (page: number) => {
+    // Clamp page to valid range
+    const clamped = Math.max(1, Math.min(totalPages, page));
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`?${params.toString()}`);
+    params.set('page', clamped.toString());
+    // Only push when page actually changes
+    if (clamped !== currentPage) {
+      router.push(`?${params.toString()}`);
+    }
   };
 
   // Determine which page numbers to show
@@ -73,24 +78,26 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
           const showEllipsis = pageNum - prevPage > 1;
 
           return (
-            <div key={pageNum} className="flex items-center gap-2">
-              {showEllipsis && <span className="px-2 text-sm text-muted-foreground">...</span>}
-              <li>
-                <Button
-                  variant="outline"
-                  size="md"
-                  aria-current={pageNum === currentPage ? 'page' : undefined}
-                  className={`h-9 rounded-full px-3 text-sm ${
-                    pageNum === currentPage
-                      ? 'bg-primary text-white hover:bg-primary hover:text-white'
-                      : ''
-                  }`}
-                  onClick={() => goToPage(pageNum)}
-                >
-                  {pageNum}
-                </Button>
-              </li>
-            </div>
+            <li key={pageNum} className="flex items-center gap-2">
+              {showEllipsis && (
+                <span key={`ellipsis-${pageNum}`} className="px-2 text-sm text-muted-foreground">
+                  ...
+                </span>
+              )}
+              <Button
+                variant="outline"
+                size="md"
+                aria-current={pageNum === currentPage ? 'page' : undefined}
+                className={`h-9 rounded-full px-3 text-sm ${
+                  pageNum === currentPage
+                    ? 'bg-primary text-white hover:bg-primary hover:text-white'
+                    : ''
+                }`}
+                onClick={() => goToPage(pageNum)}
+              >
+                {pageNum}
+              </Button>
+            </li>
           );
         })}
 
